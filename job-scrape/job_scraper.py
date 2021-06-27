@@ -6,8 +6,6 @@ Created on Tue Apr 28 11:35:04 2020
 @author: chrislovejoy
 Edited by: amariarv
 """
-
-
 import urllib
 import requests
 from bs4 import BeautifulSoup
@@ -18,7 +16,7 @@ import pandas as pd
 import os
 
 
-def find_jobs_from(website, job_title, location, desired_characs, filename="results.xls"):    
+def find_jobs_from(website, job_title, location, limit, desired_characs, filename="results.xls"):    
     """
     This function extracts all the desired characteristics of all new job postings
     of the title and location specified and returns them in single file.
@@ -33,46 +31,79 @@ def find_jobs_from(website, job_title, location, desired_characs, filename="resu
     """
     
     if website == 'Indeed':
-        job_soup = load_indeed_jobs_div(job_title, location)
-        jobs_list, num_listings = extract_job_information_indeed(job_soup, desired_characs)
-    
-    if website == 'CWjobs':
-        location_of_driver = os.getcwd()
-        driver = initiate_driver(location_of_driver, browser='chrome')
-        job_soup = make_job_search(job_title, location, driver)
-        jobs_list, num_listings = extract_job_information_cwjobs(job_soup, desired_characs)
-    
-    save_jobs_to_excel(jobs_list, filename)
+        url, page_final = urls_indeed_pages(job_title, location, limit)
+
+        jobs_list_final = {}
+        n_page = 0
+        num_listings_final = 0
+
+        while n_page < page_final:
+            start = limit * n_page
+
+            url_page = str(url)+'&start='+str(start)
+            print("Working on page: ",n_page," with URL: ", url_page)
+
+            job_soup = load_indeed_jobs_div(url_page)
+            jobs_list, num_listings = extract_job_information_indeed(job_soup, desired_characs, n_page)
+
+            df2 = pd.DataFrame(jobs_list)
+            print(df2.head())
+
+            if n_page == 0:
+                jobs_df = df2
+            else:
+                jobs_df = pd.concat([jobs_df, df2], ignore_index=True)
+
+            print(jobs_df.head())
+            num_listings_final += num_listings
+            n_page += 1
+
+            jobs_df.to_excel(filename)
+    #save_jobs_to_excel(jobs_df, filename)
  
-    print('{} new job postings retrieved from {}. Stored in {}.'.format(num_listings, 
+    print('{} new job postings retrieved from {}. Stored in {}.'.format(num_listings_final, 
                                                                           website, filename))
     
 
 ## ======================= GENERIC FUNCTIONS ======================= ##
 
-def save_jobs_to_excel(jobs_list, filename):
-    jobs = pd.DataFrame(jobs_list)
+def save_jobs_to_excel(jobs, filename):
     jobs.to_excel(filename)
-
 
 
 ## ================== FUNCTIONS FOR INDEED.CO.UK =================== ##
 
-def load_indeed_jobs_div(job_title, location):
-    getVars = {'q' : job_title, 'l' : location, 'fromage' : 'last', 'sort' : 'date'}
+def urls_indeed_pages(job_title, location, limit):
+    getVars = {'q' : job_title, 'l' : location, 'limit' : limit,'fromage' : 'last', 'sort' : 'date'}
     url = ('https://www.indeed.com/jobs?' + urllib.parse.urlencode(getVars))
     print (url)
-    page = requests.get(url)
+    page = requests.get(url,timeout=10)
     soup = BeautifulSoup(page.content, "html.parser")
+
+    job_counter=soup.findAll("div", {"id": "searchCountPages"})[0].contents[0].split()
+    print(job_counter)
+
+    jobs_total = int(job_counter[3].replace(',', ''))
+
+    n_page_final = int(round(jobs_total/limit,0))
+
+    return url, n_page_final
+
+def load_indeed_jobs_div(url_page):
+
+    page = requests.get(url_page,timeout=10)
+    soup = BeautifulSoup(page.content, 'html.parser')
     job_soup = soup.find(id="resultsCol")
+        
     return job_soup
 
-def extract_job_information_indeed(job_soup, desired_characs):
+def extract_job_information_indeed(job_soup, desired_characs, n_page):
     job_elems = job_soup.find_all('div', class_='jobsearch-SerpJobCard')
-     
+
+    print("Working on page:",n_page)
+
     cols = []
-    extracted_info = []
-    
+    extracted_info = []    
     
     if 'titles' in desired_characs:
         titles = []
@@ -145,113 +176,5 @@ def extract_descriptions_indeed(job_elem):
     page_d = requests.get(URL)
     soup_d = BeautifulSoup(page_d.content, "html.parser")
     description = soup_d.find('div', id="jobDescriptionText")
-    description = description.text.strip()
+    #description = description.text.strip()
     return description
-
-## ================== FUNCTIONS FOR CWJOBS.CO.UK =================== ##
-    
-
-def initiate_driver(location_of_driver, browser):
-    if browser == 'chrome':
-        driver = webdriver.Chrome(executable_path=(location_of_driver + "/chromedriver"))
-    elif browser == 'firefox':
-        driver = webdriver.Firefox(executable_path=(location_of_driver + "/firefoxdriver"))
-    elif browser == 'safari':
-        driver = webdriver.Safari(executable_path=(location_of_driver + "/safaridriver"))
-    elif browser == 'edge':
-        driver = webdriver.Edge(executable_path=(location_of_driver + "/edgedriver"))
-    return driver
-
-def make_job_search(job_title, location, driver):
-    driver.get('https://www.cwjobs.co.uk/')
-    
-    # Select the job box
-    job_title_box = driver.find_element_by_name('Keywords')
-
-    # Send job information
-    job_title_box.send_keys(job_title)
-
-    # Selection location box
-    location_box = driver.find_element_by_id('location')
-    
-    # Send location information
-    location_box.send_keys(location)
-    
-    # Find Search button
-    search_button = driver.find_element_by_id('search-button')
-    search_button.click()
-
-    driver.implicitly_wait(5)
-
-    page_source = driver.page_source
-    
-    job_soup = BeautifulSoup(page_source, "html.parser")
-    
-    return job_soup
-
-
-def extract_job_information_cwjobs(job_soup, desired_characs):
-    
-    job_elems = job_soup.find_all('div', class_="job")
-     
-    cols = []
-    extracted_info = []
-    
-    if 'titles' in desired_characs:
-        titles = []
-        cols.append('titles')
-        for job_elem in job_elems:
-            titles.append(extract_job_title_cwjobs(job_elem))
-        extracted_info.append(titles) 
-                           
-    
-    if 'companies' in desired_characs:
-        companies = []
-        cols.append('companies')
-        for job_elem in job_elems:
-            companies.append(extract_company_cwjobs(job_elem))
-        extracted_info.append(companies)
-    
-    if 'links' in desired_characs:
-        links = []
-        cols.append('links')
-        for job_elem in job_elems:
-            links.append(extract_link_cwjobs(job_elem))
-        extracted_info.append(links)
-                
-    if 'date_listed' in desired_characs:
-        dates = []
-        cols.append('date_listed')
-        for job_elem in job_elems:
-            dates.append(extract_date_cwjobs(job_elem))
-        extracted_info.append(dates)    
-    
-    jobs_list = {}
-    
-    for j in range(len(cols)):
-        jobs_list[cols[j]] = extracted_info[j]
-    
-    num_listings = len(extracted_info[0])
-    
-    return jobs_list, num_listings
-
-
-def extract_job_title_cwjobs(job_elem):
-    title_elem = job_elem.find('h2')
-    title = title_elem.text.strip()
-    return title
- 
-def extract_company_cwjobs(job_elem):
-    company_elem = job_elem.find('h3')
-    company = company_elem.text.strip()
-    return company
-
-def extract_link_cwjobs(job_elem):
-    link = job_elem.find('a')['href']
-    return link
-
-def extract_date_cwjobs(job_elem):
-    link_elem = job_elem.find('li', class_='date-posted')
-    link = link_elem.text.strip()
-    return link
-
