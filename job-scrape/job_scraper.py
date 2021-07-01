@@ -11,10 +11,17 @@ import requests
 from bs4 import BeautifulSoup
 import selenium
 from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException, NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+
+driver = webdriver.Chrome(ChromeDriverManager().install())
+wait = WebDriverWait(driver, 10)
+
 import pandas as pd
 import os
-
 
 def find_jobs_from(website, job_title, location, limit, desired_characs, filename="results.xls"):    
     """
@@ -44,7 +51,7 @@ def find_jobs_from(website, job_title, location, limit, desired_characs, filenam
             print("Working on page: ",n_page," with URL: ", url_page)
 
             job_soup = load_indeed_jobs_div(url_page)
-            jobs_list, num_listings = extract_job_information_indeed(job_soup, desired_characs, n_page)
+            jobs_list, num_listings = extract_job_information_indeed(url_page, desired_characs, n_page)
 
             df2 = pd.DataFrame(jobs_list)
             print(df2.head())
@@ -71,7 +78,7 @@ def save_jobs_to_excel(jobs, filename):
     jobs.to_excel(filename)
 
 
-## ================== FUNCTIONS FOR INDEED.CO.UK =================== ##
+## ================== FUNCTIONS FOR INDEED.COM =================== ##
 
 def urls_indeed_pages(job_title, location, limit):
     getVars = {'q' : job_title, 'l' : location, 'limit' : limit,'fromage' : 'last', 'sort' : 'date'}
@@ -97,11 +104,16 @@ def load_indeed_jobs_div(url_page):
         
     return job_soup
 
-def extract_job_information_indeed(job_soup, desired_characs, n_page):
-    job_elems = job_soup.find_all('div', class_='jobsearch-SerpJobCard')
+def extract_job_information_indeed(url, desired_characs, n_page):
+    print("mocos!!!!!!")
+
+    driver.get(url)
+    wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'jobsearch-SerpJobCard')))
+
+    job_elems = driver.find_all('div', class_='jobsearch-SerpJobCard')
 
     print("Working on page:",n_page)
-
+    print(job_elems)
     cols = []
     extracted_info = []    
     

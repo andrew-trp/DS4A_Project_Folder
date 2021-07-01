@@ -1,0 +1,86 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pip install -r requirements.txt"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import job_scraper\n",
+    "from job_scraper import find_jobs_from"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "desired_characs = ['titles', 'companies', 'links', 'date_listed', 'description']"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Extracting jobs from Indeed.com: \n",
+    "\n",
+    "You can test the code by running the veterinarian assistant search. This one return many fewer output than 'data scientist'. Once it runs succesfully, wait a while before you run a real job. This is to avoid being flagged by Indeed. If Indeed decided this job search is a scrape (which it is) the job will finish quickly (in a matter of seconds), so you'll have to wait about half an hour before you try again. \n",
+    "\n",
+    "Change the **job title and the city**. \n",
+    "\n",
+    "Change the **output name** (remember to use underscore to connect words): 'results.xls' to 'city_job.xls' _for example: 'new_york_veterinarian_asistant.xls'_\n",
+    "\n",
+    "IGNORE THE WARNINGS. It will take about 1 minute to run for every 100 jobs listed. So don't worry if it does not finish quickly. When it is done, it will output the result to an excel file.\n",
+    "\n",
+    "If the job fails, come back to it in a while (~20 minutes). If it fails again, contact Ana. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "find_jobs_from('Indeed', 'veterinarian asistant', 'new york', 50, desired_characs, 'results.xls')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Thank You (>'-')> <('-'<) ^('-')^ v('-')v(>'-')> (^-^)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
