@@ -35,7 +35,7 @@ def find_jobs_from(website, job_title, location, limit, desired_characs, filenam
         n_page = 0
         num_listings_final = 0
 
-        while n_page < 6: #page_final:
+        while n_page < page_final:
             start = limit * n_page
 
             url_page = str(url)+'&start='+str(start)
