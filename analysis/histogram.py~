@@ -118,9 +118,11 @@ df.head()
 
 # In[87]:
 
-plot = df['masculine_score'].hist()
+histo = df['masculine_score'].hist()
 
-plot.SaveAs("Histogram.png")
+plot = histo.get_figure()
+
+plot.savefig("plots/Histogram.png")
 
 # In[ ]:
 

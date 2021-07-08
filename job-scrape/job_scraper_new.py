@@ -45,14 +45,12 @@ def find_jobs_from(website, job_title, location, limit, desired_characs, filenam
             jobs_list, num_listings = extract_job_information_indeed(job_soup, desired_characs, n_page)
 
             df2 = pd.DataFrame(jobs_list)
-            print(df2.head())
 
             if n_page == 0:
                 jobs_df = df2
             else:
                 jobs_df = pd.concat([jobs_df, df2], ignore_index=True)
 
-            print(jobs_df.head())
             num_listings_final += num_listings
             n_page += 1
 
@@ -101,7 +99,6 @@ def extract_job_information_indeed(job_soup, desired_characs, n_page):
     job_elems = job_soup.findAll('a', class_=re.compile('tapItem fs-unmask result*'))
 
     print("Working on page:",n_page)
-    print(job_elems)
     cols = []
     extracted_info = []    
     
